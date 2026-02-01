@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHP Editor - VS Code Style</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #1e1e1e;
+            color: #cccccc;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: #323233;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border-bottom: 1px solid #1e1e1e;
+            flex-shrink: 0;
+        }
+
+        .app-title {
+            font-size: 13px;
+            color: #cccccc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .php-icon {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #8993be 0%, #6f7eb8 100%);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 50px;
+            background: #333333;
+            border-right: 1px solid #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10px;
+            gap: 5px;
+        }
+
+        .sidebar-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            color: #858585;
+            font-size: 24px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-icon:hover {
+            color: #ffffff;
+            background: #2a2a2a;
+        }
+
+        .sidebar-icon.active {
+            color: #ffffff;
+            border-left: 2px solid #007acc;
+        }
+
+        /* Editor Section */
+        .editor-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tabs-bar {
+            background: #252526;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #1e1e1e;
+        }
+
+        .tab {
+            height: 35px;
+            padding: 0 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #2d2d2d;
+            border-right: 1px solid #1e1e1e;
+            cursor: pointer;
+            font-size: 13px;
+            color: #969696;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: #1e1e1e;
+            color: #ffffff;
+        }
+
+        .tab:hover {
+            color: #ffffff;
+        }
+
+        .tab-icon {
+            font-size: 16px;
+        }
+
+        .editor-wrapper {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .CodeMirror {
+            height: 100% !important;
+            font-size: 14px;
+            line-height: 1.6;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        .CodeMirror-gutters {
+            background: #1e1e1e;
+            border-right: 1px solid #333333;
+        }
+
+        .CodeMirror-linenumber {
+            color: #858585;
+            padding: 0 10px;
+        }
+
+        /* Console Section */
+        .console-section {
+            height: 300px;
+            background: #1e1e1e;
+            border-top: 1px solid #333333;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .console-header {
+            height: 35px;
+            background: #252526;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            border-bottom: 1px solid #1e1e1e;
+        }
+
+        .console-title {
+            font-size: 13px;
+            color: #cccccc;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .console-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .console-btn {
+            background: none;
+            border: none;
+            color: #cccccc;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .console-btn:hover {
+            color: #ffffff;
+            background: #2a2a2a;
+            border-radius: 3px;
+        }
+
+        .console-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            background: #1e1e1e;
+        }
+
+        .console-entry {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .console-timestamp {
+            color: #858585;
+            font-size: 12px;
+            margin-bottom: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .console-timestamp::before {
+            content: '▶';
+            color: #4ec9b0;
+        }
+
+        .console-content {
+            color: #d4d4d4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding-left: 16px;
+            border-left: 2px solid #4ec9b0;
+            margin-left: 5px;
+        }
+
+        .console-error {
+            border-left-color: #f48771;
+        }
+
+        .console-error .console-timestamp::before {
+            color: #f48771;
+        }
+
+        .console-error .console-content {
+            color: #f48771;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4e4e4e;
+        }
+
+        /* Action Bar */
+        .action-bar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .action-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .run-button {
+            background: #0e639c;
+            color: #ffffff;
+        }
+
+        .run-button:hover {
+            background: #1177bb;
+        }
+
+        .run-button:active {
+            transform: scale(0.95);
+        }
+
+        .clear-button {
+            background: #3c3c3c;
+            color: #cccccc;
+        }
+
+        .clear-button:hover {
+            background: #505050;
+        }
+
+        /* Examples Panel */
+        .examples-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 70px;
+            background: #252526;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            max-width: 300px;
+        }
+
+        .examples-title {
+            font-size: 13px;
+            color: #cccccc;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .example-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .example-item {
+            padding: 8px 12px;
+            background: #2d2d2d;
+            border: 1px solid #3c3c3c;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #cccccc;
+            transition: all 0.2s;
+        }
+
+        .example-item:hover {
+            background: #3c3c3c;
+            border-color: #007acc;
+            color: #ffffff;
+        }
+
+        .hide {
+            display: none;
+        }
+
+        /* Resize Handle */
+        .resize-handle {
+            height: 4px;
+            background: #1e1e1e;
+            cursor: ns-resize;
+            transition: background 0.2s;
+        }
+
+        .resize-handle:hover {
+            background: #007acc;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 22px;
+            background: #007acc;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            font-size: 12px;
+            color: #ffffff;
+        }
+
+        .status-left, .status-right {
+            display: flex;
+            gap: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="app-title">
+                <div class="php-icon">PHP</div>
+                <span>PHP Editor</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-icon active" title="Explorer">
+                    📁
+                </div>
+                <div class="sidebar-icon" title="Exemples" onclick="toggleExamples()">
+                    📚
+                </div>
+            </div>
+
+            <!-- Editor Section -->
+            <div class="editor-section">
+                <div class="tabs-bar">
+                    <div class="tab active">
+                        <span class="tab-icon">🐘</span>
+                        <span>script.php</span>
+                    </div>
+                </div>
+                <div class="editor-wrapper">
+                    <div class="action-bar">
+                        <button class="action-button run-button" onclick="runCode()">
+                            ▶ Exécuter
+                        </button>
+                        <button class="action-button clear-button" onclick="clearEditor()">
+                            🗑️ Effacer
+                        </button>
+                    </div>
+                    <textarea id="code-editor"><?php
+echo "Bonjour, monde!\n";
+echo "Bienvenue dans l'éditeur PHP!\n";
+
+$nom = "Développeur";
+echo "Salut, $nom!\n";
+?></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resize Handle -->
+        <div class="resize-handle" id="resizeHandle"></div>
+
+        <!-- Console Section -->
+        <div class="console-section" id="consoleSection">
+            <div class="console-header">
+                <div class="console-title">
+                    <span>⚡</span>
+                    <span>CONSOLE</span>
+                </div>
+                <div class="console-actions">
+                    <button class="console-btn" onclick="clearConsole()" title="Effacer la console">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+            <div class="console-output" id="consoleOutput">
+                <div style="color: #858585; font-style: italic;">
+                    Prêt à exécuter du code PHP...
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-left">
+                <div class="status-item">
+                    <span>🐘 PHP 8.2.0</span>
+                </div>
+                <div class="status-item">
+                    <span>UTF-8</span>
+                </div>
+            </div>
+            <div class="status-right">
+                <div class="status-item" id="lineCol">
+                    <span>Ln 1, Col 1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Examples Panel -->
+        <div class="examples-panel hide" id="examplesPanel">
+            <div class="examples-title">📚 Exemples PHP</div>
+            <div class="example-list">
+                <div class="example-item" onclick="loadExample('hello')">Hello World</div>
+                <div class="example-item" onclick="loadExample('variables')">Variables</div>
+                <div class="example-item" onclick="loadExample('arrays')">Tableaux</div>
+                <div class="example-item" onclick="loadExample('functions')">Fonctions</div>
+                <div class="example-item" onclick="loadExample('loops')">Boucles</div>
+                <div class="example-item" onclick="loadExample('conditions')">Conditions</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/php/php.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/selection/active-line.min.js"></script>
+
+    <script>
+        // Initialize CodeMirror
+        const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+            mode: 'application/x-httpd-php',
+            theme: 'monokai',
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            styleActiveLine: true,
+            indentUnit: 4,
+            indentWithTabs: false,
+            lineWrapping: true,
+            extraKeys: {
+                'Ctrl-Enter': runCode,
+                'Cmd-Enter': runCode,
+                'F5': runCode
+            }
+        });
+
+        // Update cursor position
+        editor.on('cursorActivity', () => {
+            const cursor = editor.getCursor();
+            document.getElementById('lineCol').innerHTML = `<span>Ln ${cursor.line + 1}, Col ${cursor.ch + 1}</span>`;
+        });
+
+        // Examples
+        const examples = {
+            hello: `<?php
+echo "Bonjour, monde!\\n";
+echo "Bienvenue dans l'éditeur PHP!\\n";
+?>`,
+            variables: `<?php
+$nom = "Alice";
+$age = 25;
+$taille = 1.65;
+$estEtudiant = true;
+
+echo "Nom: $nom\\n";
+echo "Âge: $age ans\\n";
+echo "Taille: $taille m\\n";
+echo "Étudiant: " . ($estEtudiant ? "Oui" : "Non") . "\\n";
+?>`,
+            arrays: `<?php
+$fruits = ["Pomme", "Banane", "Orange", "Fraise"];
+
+echo "Liste des fruits:\\n";
+foreach ($fruits as $index => $fruit) {
+    echo ($index + 1) . ". $fruit\\n";
+}
+
+$personne = [
+    "nom" => "Bob",
+    "age" => 30,
+    "ville" => "Paris"
+];
+
+echo "\\nInformations:\\n";
+foreach ($personne as $cle => $valeur) {
+    echo "$cle: $valeur\\n";
+}
+?>`,
+            functions: `<?php
+function addition($a, $b) {
+    return $a + $b;
+}
+
+function saluer($nom = "Visiteur") {
+    return "Bonjour, $nom!";
+}
+
+echo saluer("Marie") . "\\n";
+echo saluer() . "\\n";
+echo "5 + 3 = " . addition(5, 3) . "\\n";
+?>`,
+            loops: `<?php
+echo "Boucle for:\\n";
+for ($i = 1; $i <= 5; $i++) {
+    echo "Itération $i\\n";
+}
+
+echo "\\nBoucle while:\\n";
+$j = 1;
+while ($j <= 3) {
+    echo "Compteur: $j\\n";
+    $j++;
+}
+
+echo "\\nTable de multiplication de 7:\\n";
+for ($i = 1; $i <= 10; $i++) {
+    echo "7 × $i = " . (7 * $i) . "\\n";
+}
+?>`,
+            conditions: `<?php
+$note = 15;
+
+echo "Note: $note/20\\n";
+
+if ($note >= 16) {
+    echo "Mention: Très bien\\n";
+} elseif ($note >= 14) {
+    echo "Mention: Bien\\n";
+} elseif ($note >= 12) {
+    echo "Mention: Assez bien\\n";
+} elseif ($note >= 10) {
+    echo "Mention: Passable\\n";
+} else {
+    echo "Mention: Insuffisant\\n";
+}
+
+$jour = "Lundi";
+echo "\\nAujourd'hui: $jour\\n";
+
+switch ($jour) {
+    case "Lundi":
+    case "Mardi":
+        echo "Début de semaine\\n";
+        break;
+    case "Samedi":
+    case "Dimanche":
+        echo "Week-end!\\n";
+        break;
+    default:
+        echo "Milieu de semaine\\n";
+}
+?>`
+        };
+
+        function toggleExamples() {
+            const panel = document.getElementById('examplesPanel');
+            panel.classList.toggle('hide');
+        }
+
+        function loadExample(exampleName) {
+            editor.setValue(examples[exampleName]);
+            toggleExamples();
+        }
+
+        function clearEditor() {
+            editor.setValue('<?php\n\n?>');
+            editor.setCursor(1, 0);
+            editor.focus();
+        }
+
+        function clearConsole() {
+            document.getElementById('consoleOutput').innerHTML = '<div style="color: #858585; font-style: italic;">Console effacée...</div>';
+        }
+
+        function getCurrentDateTime() {
+            const now = new Date();
+            const date = now.toLocaleDateString('fr-FR', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+            });
+            const time = now.toLocaleTimeString('fr-FR', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            return `CONSOLE: ${date}, ${time}`;
+        }
+
+        function addConsoleEntry(content, isError = false) {
+            const consoleOutput = document.getElementById('consoleOutput');
+            
+            // Remove placeholder text if present
+            if (consoleOutput.innerHTML.includes('Prêt à exécuter') || consoleOutput.innerHTML.includes('Console effacée')) {
+                consoleOutput.innerHTML = '';
+            }
+
+            const entry = document.createElement('div');
+            entry.className = 'console-entry' + (isError ? ' console-error' : '');
+            
+            const timestamp = document.createElement('div');
+            timestamp.className = 'console-timestamp';
+            timestamp.textContent = getCurrentDateTime();
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'console-content' + (isError ? ' console-error' : '');
+            contentDiv.textContent = content;
+            
+            entry.appendChild(timestamp);
+            entry.appendChild(contentDiv);
+            
+            consoleOutput.appendChild(entry);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        function runCode() {
+            const code = editor.getValue();
+            
+            try {
+                const result = interpretPHP(code);
+                addConsoleEntry(result);
+            } catch (error) {
+                addConsoleEntry(`Erreur: ${error.message}`, true);
+            }
+        }
+
+        function interpretPHP(code) {
+            let output = '';
+            
+            // Retirer les balises PHP
+            code = code.replace(/<\?php/gi, '').replace(/\?>/gi, '');
+            
+            // Variables pour stocker l'état
+            const variables = {};
+            const functions = {};
+            
+            // Fonction pour évaluer les expressions PHP
+            function evalExpression(expr) {
+                expr = expr.trim();
+                
+                // Remplacer les variables PHP par leurs valeurs
+                expr = expr.replace(/\$(\w+)/g, (match, varName) => {
+                    if (variables.hasOwnProperty(varName)) {
+                        const value = variables[varName];
+                        return typeof value === 'string' ? `"${value}"` : value;
+                    }
+                    return 'undefined';
+                });
+                
+                // Remplacer les fonctions PHP courantes
+                expr = expr.replace(/phpversion\(\)/gi, '"8.2.0"');
+                expr = expr.replace(/count\(([^)]+)\)/gi, (match, arr) => {
+                    try {
+                        const evaluated = eval(arr);
+                        return Array.isArray(evaluated) ? evaluated.length : 0;
+                    } catch {
+                        return 0;
+                    }
+                });
+                
+                try {
+                    return eval(expr);
+                } catch (e) {
+                    return expr;
+                }
+            }
+            
+            // Traiter le code ligne par ligne
+            const lines = code.split('\n');
+            let inFunction = false;
+            let functionName = '';
+            let functionBody = [];
+            let skipUntilEndif = 0;
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                
+                if (!line || line.startsWith('//')) continue;
+                
+                // Gestion des fonctions
+                if (line.match(/^function\s+(\w+)/)) {
+                    inFunction = true;
+                    functionName = line.match(/function\s+(\w+)/)[1];
+                    functionBody = [];
+                    continue;
+                }
+                
+                if (inFunction) {
+                    if (line === '}') {
+                        functions[functionName] = functionBody.join('\n');
+                        inFunction = false;
+                        functionName = '';
+                        functionBody = [];
+                    } else {
+                        functionBody.push(line);
+                    }
+                    continue;
+                }
+                
+                // Gestion des conditions if/elseif/else
+                if (skipUntilEndif > 0) {
+                    if (line.includes('}') || line.includes('endif')) {
+                        skipUntilEndif--;
+                    }
+                    continue;
+                }
+                
+                if (line.match(/^if\s*\(/)) {
+                    const condition = line.match(/if\s*\(([^)]+)\)/)[1];
+                    const result = evalExpression(condition);
+                    if (!result) {
+                        skipUntilEndif = 1;
+                    }
+                    continue;
+                }
+                
+                // Gestion des boucles for
+                if (line.match(/^for\s*\(/)) {
+                    const forMatch = line.match(/for\s*\(\s*([^;]+);\s*([^;]+);\s*([^)]+)\s*\)/);
+                    if (forMatch) {
+                        const init = forMatch[1].trim();
+                        const condition = forMatch[2].trim();
+                        const increment = forMatch[3].trim();
+                        
+                        // Initialisation
+                        if (init.includes('=')) {
+                            const [varPart, valuePart] = init.split('=');
+                            const varName = varPart.replace('$', '').trim();
+                            variables[varName] = evalExpression(valuePart);
+                        }
+                        
+                        // Trouver le corps de la boucle
+                        let loopBody = [];
+                        let braceCount = 0;
+                        let foundStart = false;
+                        
+                        for (let j = i; j < lines.length; j++) {
+                            if (lines[j].includes('{')) {
+                                foundStart = true;
+                                braceCount++;
+                            }
+                            if (foundStart && j > i) {
+                                loopBody.push(lines[j]);
+                            }
+                            if (lines[j].includes('}')) {
+                                braceCount--;
+                                if (braceCount === 0 && foundStart) {
+                                    i = j;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Exécuter la boucle
+                        let iterations = 0;
+                        while (evalExpression(condition) && iterations < 1000) {
+                            for (const bodyLine of loopBody) {
+                                const trimmedLine = bodyLine.trim();
+                                if (trimmedLine && trimmedLine !== '{' && trimmedLine !== '}') {
+                                    processLine(trimmedLine);
+                                }
+                            }
+                            
+                            // Incrément
+                            if (increment.includes('++')) {
+                                const varName = increment.replace(/\$|\+\+/g, '').trim();
+                                variables[varName]++;
+                            } else if (increment.includes('--')) {
+                                const varName = increment.replace(/\$|--/g, '').trim();
+                                variables[varName]--;
+                            }
+                            
+                            iterations++;
+                        }
+                        continue;
+                    }
+                }
+                
+                // Gestion des boucles foreach
+                if (line.match(/^foreach\s*\(/)) {
+                    const foreachMatch = line.match(/foreach\s*\(\s*\$(\w+)\s+as\s+(?:\$(\w+)\s*=>\s*)?\$(\w+)\s*\)/);
+                    if (foreachMatch) {
+                        const arrayName = foreachMatch[1];
+                        const keyName = foreachMatch[2];
+                        const valueName = foreachMatch[3];
+                        
+                        if (variables[arrayName]) {
+                            let loopBody = [];
+                            let braceCount = 0;
+                            let foundStart = false;
+                            
+                            for (let j = i; j < lines.length; j++) {
+                                if (lines[j].includes('{')) {
+                                    foundStart = true;
+                                    braceCount++;
+                                }
+                                if (foundStart && j > i) {
+                                    loopBody.push(lines[j]);
+                                }
+                                if (lines[j].includes('}')) {
+                                    braceCount--;
+                                    if (braceCount === 0 && foundStart) {
+                                        i = j;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            const array = variables[arrayName];
+                            if (Array.isArray(array)) {
+                                array.forEach((value, index) => {
+                                    if (keyName) variables[keyName] = index;
+                                    variables[valueName] = value;
+                                    
+                                    for (const bodyLine of loopBody) {
+                                        const trimmedLine = bodyLine.trim();
+                                        if (trimmedLine && trimmedLine !== '{' && trimmedLine !== '}') {
+                                            processLine(trimmedLine);
+                                        }
+                                    }
+                                });
+                            } else if (typeof array === 'object') {
+                                Object.entries(array).forEach(([key, value]) => {
+                                    if (keyName) variables[keyName] = key;
+                                    variables[valueName] = value;
+                                    
+                                    for (const bodyLine of loopBody) {
+                                        const trimmedLine = bodyLine.trim();
+                                        if (trimmedLine && trimmedLine !== '{' && trimmedLine !== '}') {
+                                            processLine(trimmedLine);
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                        continue;
+                    }
+                }
+                
+                // Gestion des boucles while
+                if (line.match(/^while\s*\(/)) {
+                    const whileMatch = line.match(/while\s*\(([^)]+)\)/);
+                    if (whileMatch) {
+                        const condition = whileMatch[1];
+                        
+                        let loopBody = [];
+                        let braceCount = 0;
+                        let foundStart = false;
+                        
+                        for (let j = i; j < lines.length; j++) {
+                            if (lines[j].includes('{')) {
+                                foundStart = true;
+                                braceCount++;
+                            }
+                            if (foundStart && j > i) {
+                                loopBody.push(lines[j]);
+                            }
+                            if (lines[j].includes('}')) {
+                                braceCount--;
+                                if (braceCount === 0 && foundStart) {
+                                    i = j;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Exécuter la boucle
+                        let iterations = 0;
+                        while (evalExpression(condition) && iterations < 1000) {
+                            for (const bodyLine of loopBody) {
+                                const trimmedLine = bodyLine.trim();
+                                if (trimmedLine && trimmedLine !== '{' && trimmedLine !== '}') {
+                                    processLine(trimmedLine);
+                                }
+                            }
+                            iterations++;
+                        }
+                        continue;
+                    }
+                }
+                
+                processLine(line);
+            }
+            
+            function processLine(line) {
+                // Gestion de echo
+                if (line.match(/^echo\s+/i)) {
+                    let content = line.replace(/^echo\s+/i, '').replace(/;$/, '').trim();
+                    
+                    // Gérer les concaténations avec .
+                    const parts = content.split(/\s*\.\s*/);
+                    let result = '';
+                    
+                    for (const part of parts) {
+                        let evaluated = part.trim();
+                        
+                        // Chaînes entre guillemets
+                        if ((evaluated.startsWith('"') && evaluated.endsWith('"')) || 
+                            (evaluated.startsWith("'") && evaluated.endsWith("'"))) {
+                            evaluated = evaluated.slice(1, -1);
+                            evaluated = evaluated.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+                            
+                            // Interpolation de variables dans les chaînes
+                            evaluated = evaluated.replace(/\$(\w+)/g, (match, varName) => {
+                                return variables.hasOwnProperty(varName) ? variables[varName] : match;
+                            });
+                            
+                            result += evaluated;
+                        }
+                        // Variables
+                        else if (evaluated.startsWith('$')) {
+                            const varName = evaluated.replace('$', '');
+                            result += variables.hasOwnProperty(varName) ? variables[varName] : '';
+                        }
+                        // Expressions
+                        else {
+                            const evalResult = evalExpression(evaluated);
+                            result += evalResult !== undefined ? evalResult : '';
+                        }
+                    }
+                    
+                    output += result;
+                }
+                
+                // Gestion des affectations de variables
+                else if (line.match(/^\$(\w+)\s*=/)) {
+                    const match = line.match(/^\$(\w+)\s*=\s*(.+?);?$/);
+                    if (match) {
+                        const varName = match[1];
+                        let value = match[2].replace(/;$/, '').trim();
+                        
+                        // Tableaux
+                        if (value.startsWith('[') && value.endsWith(']')) {
+                            try {
+                                value = value.replace(/=>/g, ':');
+                                variables[varName] = JSON.parse(value);
+                            } catch {
+                                variables[varName] = [];
+                            }
+                        }
+                        // Chaînes
+                        else if ((value.startsWith('"') && value.endsWith('"')) || 
+                                 (value.startsWith("'") && value.endsWith("'"))) {
+                            variables[varName] = value.slice(1, -1).replace(/\\n/g, '\n');
+                        }
+                        // Booléens
+                        else if (value === 'true') {
+                            variables[varName] = true;
+                        } else if (value === 'false') {
+                            variables[varName] = false;
+                        }
+                        // Nombres et expressions
+                        else {
+                            variables[varName] = evalExpression(value);
+                        }
+                    }
+                }
+            }
+            
+            return output || '(Aucune sortie)';
+        }
+
+        // Resize functionality
+        let isResizing = false;
+        const resizeHandle = document.getElementById('resizeHandle');
+        const consoleSection = document.getElementById('consoleSection');
+
+        resizeHandle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'ns-resize';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            
+            const windowHeight = window.innerHeight;
+            const newHeight = windowHeight - e.clientY - 22; // 22 is status bar height
+            
+            if (newHeight >= 100 && newHeight <= windowHeight - 200) {
+                consoleSection.style.height = newHeight + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+            document.body.style.cursor = 'default';
+        });
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            runCode();
+        });
+
+        // Keyboard shortcut
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                runCode();
+            }
+            if (e.key === 'F5') {
+                e.preventDefault();
+                runCode();
+            }
+        });
+    </script>
+</body>
+</html>
